@@ -3,8 +3,8 @@
 #include <gmock/gmock.h>
 
 // Local Includes
-#include <collections/cpp_btree.hpp>
+#include <collections/btree.hpp>
 
-namespace cpp_btree_testing {
+namespace collections::btree_testing {
 
-} // namespace cpp_btree_testing
+} // namespace collections::btree_testing
