@@ -2,7 +2,7 @@
 # Information
 #-----------------------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 4.3.0)
-project("cpp_btree"
+project("btree"
         VERSION 0.1.0
         DESCRIPTION ""
         LANGUAGES CXX
@@ -61,44 +61,44 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
 endif()
 
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: cpp_btree_headers
-# Alias: collections::cpp_btree_headers
+# Target: btree_headers
+# Alias: collections::btree_headers
 # Type: Interface Library
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_library(cpp_btree_headers INTERFACE)
+add_library(btree_headers INTERFACE)
 
 # Target alias
-add_library(collections::cpp_btree_headers ALIAS cpp_btree_headers)
+add_library(collections::btree_headers ALIAS btree_headers)
 
 # Target headers
-target_include_directories(cpp_btree_headers
+target_include_directories(btree_headers
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: cpp_btree
-# Alias: collections::cpp_btree
+# Target: btree
+# Alias: collections::btree
 # Type: Interface Library
-# Dependencies: collections::cpp_btree_headers
+# Dependencies: collections::btree_headers
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_library(cpp_btree INTERFACE)
+add_library(btree INTERFACE)
 
 # Target alias
-add_library(collections::cpp_btree ALIAS cpp_btree)
+add_library(collections::btree ALIAS btree)
 
 # Target dependencies
-target_link_libraries(cpp_btree
+target_link_libraries(btree
     INTERFACE
-        collections::cpp_btree_headers
+        collections::btree_headers
 )
 
 # Target properties
-set_target_properties(cpp_btree PROPERTIES
-        OUTPUT_NAME cpp_btree
+set_target_properties(btree PROPERTIES
+        OUTPUT_NAME btree
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
         CXX_VISIBILITY_PRESET hidden
@@ -106,12 +106,12 @@ set_target_properties(cpp_btree PROPERTIES
 )
 
 if(NOT CMAKE_SKIP_INSTALL_RULES)
-    # Install cpp_btree
-    install(TARGETS cpp_btree
-            RUNTIME COMPONENT cpp_btree
-            LIBRARY COMPONENT cpp_btree
-            NAMELINK_COMPONENT cpp_btree
-            ARCHIVE COMPONENT cpp_btree
+    # Install btree
+    install(TARGETS btree
+            RUNTIME COMPONENT btree
+            LIBRARY COMPONENT btree
+            NAMELINK_COMPONENT btree
+            ARCHIVE COMPONENT btree
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
