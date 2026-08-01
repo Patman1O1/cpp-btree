@@ -1,15 +1,11 @@
 #-----------------------------------------------------------------------------------------------------------------------
 # Information
 #-----------------------------------------------------------------------------------------------------------------------
-cmake_minimum_required(VERSION {{ cmake_version }})
-project("{{ project.name }}"
-        VERSION {{ project.version }}
-        DESCRIPTION "{{ project.description }}"
-        {% if language.name == "C" %}
-        LANGUAGES C
-        {% elif language.name == "C++" %}
+cmake_minimum_required(VERSION 4.3.0)
+project("cpp_btree"
+        VERSION 0.1.0
+        DESCRIPTION ""
         LANGUAGES CXX
-        {% endif %}
 )
 
 # CMake Information
@@ -23,19 +19,11 @@ cmake_file_api(
 # Settings
 #-----------------------------------------------------------------------------------------------------------------------
 if(PROJECT_IS_TOP_LEVEL)
-    {% if language.name == "C" %}
-    # C Settings
-    set(CMAKE_C_STANDARD {{ language.std }})
-    set(CMAKE_C_STANDARD_REQUIRED ON)
-    set(CMAKE_C_EXTENSIONS OFF)
-    set(CMAKE_C_VISIBILITY_PRESET hidden)
-    {% elif language.name == "C++" %}
     # C++ Settings
-    set(CMAKE_CXX_STANDARD {{ language.std }})
+    set(CMAKE_CXX_STANDARD 26)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
     set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-    {% endif %}
     set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -45,11 +33,6 @@ if(PROJECT_IS_TOP_LEVEL)
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
     # Project Options
-    {% if project.type == "Shared Library" %}
-    option(BUILD_SHARED_LIBS "Build the project as a shared library" ON)
-    {% elif project.type == "Static Library" %}
-    option(BUILD_SHARED_LIBS "Build the project as a shared library" OFF)
-    {% endif %}
     option(BUILD_TESTS "Build the project's test suite" OFF)
 
     # Set default build type if not specified
@@ -67,7 +50,6 @@ if(BUILD_TESTS)
 endif()
 
 include(GNUInstallDirs)
-{% if project.type != "Executable" %}
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Installation
@@ -79,74 +61,63 @@ if(NOT CMAKE_SKIP_INSTALL_RULES)
 endif()
 
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: {{ project.name }}_headers
-# Alias: {{ project.namespace }}::{{ project.name }}_headers
+# Target: cpp_btree_headers
+# Alias: collections::cpp_btree_headers
 # Type: Interface Library
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_library({{ project.name }}_headers INTERFACE)
+add_library(cpp_btree_headers INTERFACE)
 
 # Target alias
-add_library({{ project.namespace }}::{{ project.name }}_headers ALIAS {{ project.name }}_headers)
+add_library(collections::cpp_btree_headers ALIAS cpp_btree_headers)
 
 # Target headers
-target_include_directories({{ project.name }}_headers
+target_include_directories(cpp_btree_headers
     INTERFACE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-{% endif %}
-{% if project.type == "Interface Library" %}
 
 #-----------------------------------------------------------------------------------------------------------------------
-# Target: {{ project.name }}
-# Alias: {{ project.namespace }}::{{ project.name }}
-# Type: {{ project.type }}
-# Dependencies: {{ project.namespace }}::{{ project.name }}_headers
+# Target: cpp_btree
+# Alias: collections::cpp_btree
+# Type: Interface Library
+# Dependencies: collections::cpp_btree_headers
 #-----------------------------------------------------------------------------------------------------------------------
 # Target definition
-add_library({{ project.name }} INTERFACE)
+add_library(cpp_btree INTERFACE)
 
 # Target alias
-add_library({{ project.namespace }}::{{ project.name }} ALIAS {{ project.name }})
+add_library(collections::cpp_btree ALIAS cpp_btree)
 
 # Target dependencies
-target_link_libraries({{ project.name }}
+target_link_libraries(cpp_btree
     INTERFACE
-        {{ project.namespace }}::{{ project.name }}_headers
+        collections::cpp_btree_headers
 )
 
 # Target properties
-set_target_properties({{ project.name }} PROPERTIES
-        OUTPUT_NAME {{ project.name }}
+set_target_properties(cpp_btree PROPERTIES
+        OUTPUT_NAME cpp_btree
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR}
-        {% if language.name == "C" %}
-        C_VISIBILITY_PRESET hidden
-        {% elif language.name == "C++" %}
         CXX_VISIBILITY_PRESET hidden
-        {% endif %}
         VISIBILITY_INLINES_HIDDEN ON
 )
 
 if(NOT CMAKE_SKIP_INSTALL_RULES)
-    # Install {{ project.name }}
-    install(TARGETS {{ project.name }}
-            RUNTIME COMPONENT {{ project.name }}
-            LIBRARY COMPONENT {{ project.name }}
-            NAMELINK_COMPONENT {{ project.name }}
-            ARCHIVE COMPONENT {{ project.name }}
+    # Install cpp_btree
+    install(TARGETS cpp_btree
+            RUNTIME COMPONENT cpp_btree
+            LIBRARY COMPONENT cpp_btree
+            NAMELINK_COMPONENT cpp_btree
+            ARCHIVE COMPONENT cpp_btree
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
-{% endif %}
 
 #-----------------------------------------------------------------------------------------------------------------------
 # Subdirectories
 #-----------------------------------------------------------------------------------------------------------------------
-{% if project.type != "Interface Library" %}
-add_subdirectory(src)
-
-{% endif %}
 if(BUILD_TESTS)
     add_subdirectory(tests)
 endif()
