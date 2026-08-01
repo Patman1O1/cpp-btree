@@ -2,8 +2,8 @@ from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps, cmake_layout
 import os
 
-class CppBtree(ConanFile):
-    name = "cpp_btree"
+class Btree(ConanFile):
+    name = "btree"
     version = "0.1.0"
     author = "Patman1O1"
     description = ""
@@ -21,7 +21,7 @@ class CppBtree(ConanFile):
 
     def configure(self) -> None:
         if self.settings.build_type == "Debug":
-	    self.options.build_tests.value = True
+	        self.options.build_tests.value = True
 
     def build_requirements(self) -> None:
         self.tool_requires("cmake/[>=4.3.0]")
@@ -44,6 +44,6 @@ class CppBtree(ConanFile):
     def package(self) -> None: CMake(self).install()
 
     def package_info(self) -> None:
-        self.cpp_info.set_property("cmake_target_name", "collections::cpp_btree")
+        self.cpp_info.set_property("cmake_target_name", "collections::btree")
         self.cpp_info.bindirs = []
         self.cpp_info.libdirs = []
