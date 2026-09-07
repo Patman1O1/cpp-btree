@@ -19,10 +19,6 @@ class Btree(ConanFile):
         "build_tests": False
     }
 
-    def configure(self) -> None:
-        if self.settings.build_type == "Debug":
-	        self.options.build_tests.value = True
-
     def build_requirements(self) -> None:
         self.tool_requires("cmake/[>=4.3.0]")
         if bool(self.options.build_tests):
