@@ -9,22 +9,24 @@
 #include <ranges>
 #include <iterator>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <type_traits>
+#include <utility>
 
 namespace collections {
-    template<typename T, typename Allocator = std::allocator<T>>
+    template<
+        typename T,
+        typename Compare = std::less<T>,
+        typename Allocator = std::allocator<T>
+    >
     class btree {
     public:
         // ── Forward Declarations ────────────────────────────────────────────
         class iterator;
 
         class const_iterator;
-    private:
-        // ── Forward Declarations ────────────────────────────────────────────
-        struct node;
 
-    public:
         // ── Aliases ─────────────────────────────────────────────────────────
         using value_type = T;
 
@@ -34,11 +36,11 @@ namespace collections {
 
         using difference_type = std::ptrdiff_t;
 
-        using pointer = std::allocator_traits<allocator_type>::pointer;
+        using ator_traits = std::allocator_traits<allocator_type>;
 
-        using const_pointer = std::allocator_traits<
-            allocator_type
-        >::const_pointer;
+        using pointer = ator_traits::pointer;
+
+        using const_pointer = ator_traits::const_pointer;
 
         using reference = value_type&;
 
@@ -62,9 +64,11 @@ namespace collections {
         };
 
         // ── Aliases ─────────────────────────────────────────────────────────
-        using node_allocator_type = std::allocator_traits<
-            allocator_type
-        >::template rebind_alloc<struct node>;
+        using node_allocator_type = ator_traits::template rebind_alloc<
+            struct node
+        >;
+
+        using node_ator_traits = std::allocator_traits<node_allocator_type>;
 
         // ── Fields ──────────────────────────────────────────────────────────
         struct node* root_;
@@ -75,6 +79,141 @@ namespace collections {
         allocator_type alloc_;
 
     public:
+        // ── node_type ───────────────────────────────────────────────────────
+        class node_type {
+        public:
+            // ── Aliases ─────────────────────────────────────────────────────
+            using value_type = btree::value_type;
+
+            using allocator_type = btree::node_allocator_type;
+
+            using container_node_type = struct btree::node;
+
+            using ator_traits = std::allocator_traits<allocator_type>;
+
+            using reference = value_type&;
+
+            using pointer = typename ator_traits::template rebind_traits<
+                container_node_type
+            >::pointer;
+        
+        private:
+            // ── Friends ─────────────────────────────────────────────────────
+            friend class btree;
+
+            // ── Fields ──────────────────────────────────────────────────────
+            pointer ptr_;
+
+            std::optional<allocator_type> alloc_;
+        
+        public:
+            // ── Constructors ────────────────────────────────────────────────
+            // TODO: Need to test
+            constexpr node_type() noexcept : ptr_(nullptr),
+                                             alloc_(std::nullopt) {}
+
+            constexpr node_type(const node_type&) noexcept = delete;
+
+            // TODO: Need to test
+            constexpr node_type(
+                node_type&& other
+            ) noexcept : ptr_(std::move(other.ptr_)), 
+                         alloc_(std::move(other.alloc_)) {
+                other.ptr_ = nullptr;
+                other.alloc_ = std::nullopt;
+            }
+
+            // ── Destructor ──────────────────────────────────────────────────
+            // TODO: Need to test
+            constexpr ~node_type() noexcept {
+                if (this->ptr_ == nullptr) [[unlikely]] {
+                    return;
+                }
+
+                ator_traits::destroy(this->alloc_.value(), this->ptr_);
+                ator_traits::deallocate(this->alloc_.value(), this->ptr_);
+                this->ptr_ = nullptr;
+            }
+
+            // ── Overloaded Operators ────────────────────────────────────────
+            constexpr auto operator=(
+                const node_type&
+            ) noexcept -> node_type& = delete;
+            
+            // TODO: Need to test
+            constexpr auto operator=(
+                node_type&& rhs
+            ) noexcept -> node_type& {
+                this->~node_type();
+
+                this->ptr_ = std::move(rhs.ptr_);
+                rhs.ptr_ = nullptr;
+
+                this->alloc_ = std::move(rhs.alloc_);
+                rhs.alloc_ = std::nullopt;
+
+                return *this;
+            }
+
+            // TODO: Need to test
+            [[nodiscard]]
+            constexpr auto operator==(
+                const node_type& rhs
+            ) const noexcept -> bool { return this->ptr_ == rhs.ptr_; }
+
+            // TODO: Need to test
+            [[nodiscard]]
+            constexpr auto operator!=(
+                const node_type& rhs
+            ) const noexcept -> bool { return this->ptr_ != rhs.ptr_; }
+
+            // TODO: Need to test
+            [[nodiscard]]
+            constexpr auto operator*() const noexcept -> reference {
+                return *this->ptr_;
+            }
+
+            // TODO: Need to test
+            [[nodiscard]]
+            explicit constexpr operator bool() const noexcept {
+                return this->ptr_ != nullptr;
+            }
+
+            // ── Methods ─────────────────────────────────────────────────────
+            // TODO: Need to test
+            [[nodiscard]]
+            constexpr auto empty() const noexcept -> bool {
+                return this->ptr_ == nullptr;
+            }
+
+            // TODO: Need to test
+            [[nodiscard]]
+            constexpr auto value() const -> std::optional<reference> {
+                return this->ptr_ != nullptr ? *this->ptr_ : std::nullopt;
+            }
+
+            // TODO: Need to test
+            constexpr void swap(node_type&& other) noexcept(
+                ator_traits::propagate_on_container_swap::value ||
+                ator_traits::is_always_equal::value
+            ) {
+                pointer tmp = this->ptr_;
+                this->ptr_ = other.ptr_;
+                other.ptr_ = tmp;
+            }
+        };
+
+        // ── insert_return_type ──────────────────────────────────────────────
+        template<typename Iterator = iterator, typename NodeType = node_type>
+        struct insert_return_type {
+            // ── Fields ──────────────────────────────────────────────────────
+            Iterator position;
+
+            bool inserted;
+
+            NodeType node;
+        };
+
         // ── iterator ────────────────────────────────────────────────────────
         class iterator {
         public:
@@ -83,11 +222,11 @@ namespace collections {
 
             using iterator_concept = std::bidirectional_iterator_tag;
 
-            using value_type = typename btree::value_type;
+            using value_type = btree::value_type;
 
-            using size_type = typename btree::size_type;
+            using size_type = btree::size_type;
 
-            using difference_type = typename btree::difference_type;
+            using difference_type = btree::difference_type;
             
             using reference = value_type&;
 
@@ -316,7 +455,7 @@ namespace collections {
         template<std::ranges::input_range R> requires(
             std::convertible_to<std::ranges::range_reference_t<R>, value_type>
         )
-        constexpr list(
+        constexpr btree(
             std::from_range_t,
             R&& rg,
             const allocator_type& alloc = allocator_type()
@@ -325,33 +464,29 @@ namespace collections {
         }
 
         // TODO: Need to implement
-        constexpr list(const list& other) {
-            throw std::runtime_error("Not implemented");
-        }
+        constexpr btree(const btree& other);
 
         // TODO: Need to implement
-        constexpr list(list&& other) noexcept {
-            throw std::runtime_error("Not implemented");
-        }
+        constexpr btree(btree&& other) noexcept;
 
         // TODO: Need to implement
-        constexpr list(
-            const list& other,
+        constexpr btree(
+            const btree& other,
             const std::type_identity_t<allocator_type>& alloc
         ) : alloc_(alloc) {
             throw std::runtime_error("Not implemented");
         }
 
         // TODO: Need to implement
-        constexpr list(
-            list&& other,
+        constexpr btree(
+            btree&& other,
             const std::type_identity_t<allocator_type>& alloc
         ) : alloc_(alloc) {
             throw std::runtime_error("Not implemented");
         }
 
         // TODO: Need to implement
-        constexpr list(
+        constexpr btree(
             std::initializer_list<value_type> values,
             const allocator_type& alloc = allocator_type()
         ) : sz_(values.size()), alloc_(alloc) {
@@ -360,8 +495,8 @@ namespace collections {
 
         // ── Destructor ──────────────────────────────────────────────────────
         // TODO: Need to implement
-        constexpr ~list() noexcept {
-            if (this->head_ == nullptr) [[unlikely]] {
+        constexpr ~btree() noexcept {
+            if (this->root_ == nullptr) [[unlikely]] {
                 return;
             }
             throw std::runtime_error("Not implemented");
@@ -369,55 +504,25 @@ namespace collections {
         
         // ── Overloaded Operators ────────────────────────────────────────────
         // TODO: Need to implement
-        constexpr auto operator=(const list& rhs) -> list&;
+        constexpr auto operator=(const btree& rhs) -> btree&;
 
         // TODO: Need to implement
-        constexpr auto operator=(list&& rhs) noexcept -> list&;
-
-        // TODO: Need to implement
-        [[nodiscard]]
-        constexpr auto operator==(const list& rhs) const -> bool;
+        constexpr auto operator=(btree&& rhs) noexcept -> btree&;
 
         // TODO: Need to implement
         [[nodiscard]]
-        constexpr auto operator<=>(const list& rhs) const;
-
-        // ── Methods ─────────────────────────────────────────────────────────
-        // TODO: Need to implement
-        constexpr void assign(const size_type count, const_reference value);
+        constexpr auto operator==(const btree& rhs) const -> bool;
 
         // TODO: Need to implement
-        template<std::input_iterator InputIt>
-        constexpr void assign(InputIt first, InputIt last);
+        [[nodiscard]]
+        constexpr auto operator<=>(const btree& rhs) const;
 
-        // TODO: Need to implement
-        constexpr void assign(std::initializer_list<value_type> values);
-
-        // TODO: Need to implement
-        template<std::ranges::input_range R> requires(
-            std::convertible_to<std::ranges::range_reference_t<R>, value_type>
-        )
-        constexpr void assign_range(R&& rg);
-
+        // ── Methods ───────────────────────────────────────────────────────── 
         // TODO: Need to implement
         [[nodiscard]]
         [[gnu::always_inline]]
         constexpr auto get_allocator() const noexcept -> allocator_type;
-
-        // TODO: Need to implement
-        constexpr auto front() -> reference;
-
-        // TODO: Need to implement
-        [[nodiscard]]
-        constexpr auto front() const -> const_reference;
-
-        // TODO: Need to implement
-        constexpr auto back() -> reference;
-
-        // TODO: Need to implement
-        [[nodiscard]]
-        constexpr auto back() const -> const_reference;
-
+ 
         // TODO: Need to implement
         constexpr auto begin() noexcept -> iterator;
 
@@ -468,10 +573,22 @@ namespace collections {
 
         // TODO: Need to implement
         [[nodiscard]]
+        constexpr auto size() const noexcept -> size_type;
+
+        // TODO: Need to implement
+        [[nodiscard]]
         constexpr auto max_size() const noexcept -> size_type;
 
         // TODO: Need to implement
         constexpr void clear() noexcept;
+
+        // TODO: Need to implement
+        constexpr auto insert(
+            const_reference value
+        ) -> std::pair<iterator, bool>;
+
+        // TODO: Need to implement
+        constexpr auto insert(value_type&& value) -> std::pair<iterator, bool>;
 
         // TODO: Need to implement
         constexpr auto insert(
@@ -486,26 +603,32 @@ namespace collections {
         ) -> iterator;
 
         // TODO: Need to implement
-        constexpr auto insert(
-            const_iterator pos,
-            const size_type count,
-            const_reference value
-        ) -> iterator;
-
-        // TODO: Need to implement
         template<std::input_iterator InputIt>
+        constexpr void insert(InputIt first, InputIt last);
+
+        // TODO: Need to implement
+        constexpr void insert(std::initializer_list<value_type> values);
+
+        // TODO: Need to implement
         constexpr auto insert(
-            const_iterator pos,
-            InputIt first,
-            InputIt last
-        ) -> iterator;
+            node_type&& node_handle
+        ) -> struct insert_return_type<iterator, node_type>;
 
         // TODO: Need to implement
         constexpr auto insert(
             const_iterator pos,
-            std::initializer_list<value_type> values
+            node_type&& node_handle
         ) -> iterator;
 
+        // TODO: Need to implement
+        template<std::ranges::input_range R> requires(
+            std::convertible_to<std::ranges::range_reference_t<R>, value_type>
+        )
+        constexpr void insert_range(R&& rg);
+
+        template<typename... Args>
+        constexpr auto emplace(Args&&... args) -> std::pair<iterator, bool>;
+       
         // TODO: Need to implement
         template<typename... Args>
         constexpr auto emplace(
@@ -514,13 +637,16 @@ namespace collections {
         ) -> iterator;
 
         // TODO: Need to implement
-        template<std::ranges::input_range R> requires(
-            std::convertible_to<std::ranges::range_reference_t<R>, value_type>
-        )
-        constexpr auto insert_range(
-            const_iterator pos,
-            R&& rg
+        template<typename... Args>
+        constexpr auto emplace_hint(
+            const_iterator hint,
+            Args&&... args
         ) -> iterator;
+
+        // TODO: Need to implement
+        constexpr auto erase(iterator pos) -> iterator requires(
+            !std::same_as<iterator, const_iterator>
+        );
 
         // TODO: Need to implement
         constexpr auto erase(const_iterator pos) -> iterator;
@@ -530,171 +656,87 @@ namespace collections {
             const_iterator first,
             const_iterator last
         ) -> iterator;
-
-        // TODO: Need to implement
-        constexpr void push_back(const_reference value);
-
-        // TODO: Need to implement
-        constexpr void push_back(value_type&& value);
-
-        // TODO: Need to implement
-        template<typename... Args>
-        constexpr auto emplace_back(Args&&... args) -> reference;
-
-        // TODO: Need to implement
-        template<std::ranges::input_range R> requires(
-            std::convertible_to<std::ranges::range_reference_t<R>, value_type>
-        )
-        constexpr void append_range(R&& rg);
-
-        // TODO: Need to implement
-        constexpr void pop_back();
-
-        // TODO: Need to implement
-        constexpr void push_front(const_reference value);
-
-        // TODO: Need to implement
-        constexpr void push_front(value_type&& value);
-
-        // TODO: Need to implement
-        template<typename... Args >
-        constexpr auto emplace_front(Args&&... args) -> reference;
-
-        // TODO: Need to implement
-        template<std::ranges::input_range R> requires(
-            std::convertible_to<std::ranges::range_reference_t<R>, value_type>
-        )
-        constexpr void prepend_range(R&& rg);
-
-        // TODO: Need to implement
-        constexpr void pop_front();
         
         // TODO: Need to implement
-        constexpr void resize(const size_type count);
-
-        // TODO: Need to implement
-        constexpr void resize(const size_type count, const_reference value);
-
-        // TODO: Need to implement
-        constexpr void swap(list& other) noexcept(
+        constexpr void swap(btree& other) noexcept(
             std::allocator_traits<Allocator>::is_always_equal::value
         );
 
         // TODO: Need to implement
-        constexpr void merge(list& other);
+        constexpr auto extract(const_iterator position) -> node_type;
 
         // TODO: Need to implement
-        constexpr void merge(list&& other);
+        constexpr void merge(btree& other);
 
         // TODO: Need to implement
-        template<typename Compare> 
-        constexpr void merge(list& other, const Compare comp);
+        constexpr void merge(btree&& other);
 
         // TODO: Need to implement
-        template<typename Compare> 
-        constexpr void merge(list&& other, const Compare comp);
+        template<typename Comp> 
+        constexpr void merge(btree& other, const Comp comp);
 
         // TODO: Need to implement
-        constexpr void splice(const_iterator pos, list& other);
+        template<typename Comp> 
+        constexpr void merge(btree&& other, const Comp comp);
 
         // TODO: Need to implement
-        constexpr void splice(const_iterator pos, list&& other);
+        constexpr auto lower_bound(const_reference value) -> iterator;
 
         // TODO: Need to implement
-        constexpr void splice(
-            const_iterator pos,
-            list& other,
-            const_iterator it
-        );
+        [[nodiscard]]
+        constexpr auto lower_bound(
+            const_reference value
+        ) const -> const_iterator;
 
         // TODO: Need to implement
-        constexpr void splice(
-            const_iterator pos,
-            list&& other,
-            const_iterator it
-        );
-
-        // TODO: Need to implement
-        constexpr void splice(
-            const_iterator pos,
-            list& other,
-            const_iterator first,
-            const_iterator last
-        );
-
-        // TODO: Need to implement
-        constexpr void splice(
-            const_iterator pos,
-            list&& other,
-            const_iterator first,
-            const_iterator last
-        );
-
-        // TODO: Need to implement
-        constexpr auto remove(const_reference value) -> size_type;
-
-        // TODO: Need to implement
-        template<typename UnaryPredicate>
-        constexpr auto remove_if(const UnaryPredicate pred) -> size_type;
-
-        // TODO: Need to implement
-        constexpr void reverse() noexcept;
+        constexpr auto upper_bound(const_reference value) -> iterator;
         
         // TODO: Need to implement
-        constexpr auto unique() -> size_type;
+        [[nodiscard]]
+        constexpr auto upper_bound(
+            const_reference value
+        ) const -> const_iterator;
 
-        // TODO: Need to implement
-        template<typename BinaryPredicate>
-        constexpr auto unique(const BinaryPredicate pred) -> size_type;
-
-        // TODO: Need to implement
-        constexpr void sort();
-
-        // TODO: Need to implement
-        template<typename Compare>
-        constexpr void sort(const Compare comp);
     };
 
     // ── Deduction Guides ────────────────────────────────────────────────────
     // TODO: Need to test
     template<
         std::input_iterator InputIt,
+        typename Comp = std::less<
+            typename std::iterator_traits<InputIt>::value_type
+        >,
         typename Alloc = std::allocator<
-              typename std::iterator_traits<InputIt>::value_type
+            typename std::iterator_traits<InputIt>::value_type
         >
     >
-    list(InputIt, InputIt, Alloc = Alloc()) -> list<
-        typename std::iterator_traits<InputIt>::value_type, Alloc
-    >;
-
-    // TODO: Need to test
-    template<
-        std::ranges::input_range R,
-        typename Alloc = std::allocator<std::ranges::range_value_t<R>>
-    >
-    list(
-        std::from_range_t,
-        R&&,
+    btree(
+        InputIt,
+        InputIt,
+        Comp = Comp(),
         Alloc = Alloc()
-    ) -> list<std::ranges::range_value_t<R>, Alloc>;
+    ) -> btree<
+        typename std::iterator_traits<InputIt>::value_type, Comp, Alloc
+    >;
 
     // ── Functions ───────────────────────────────────────────────────────────
     // TODO: Need to implement
-    template<typename T, typename Alloc>
-    constexpr void swap(list<T, Alloc>& lhs, list<T, Alloc>& rhs) noexcept(
-        noexcept(lhs.swap(rhs))
-    );
+    template<typename T, typename Comp, typename Alloc>
+    constexpr void swap(
+        btree<T, Comp, Alloc>& lhs,
+        btree<T, Comp, Alloc>& rhs
+    ) noexcept(noexcept(lhs.swap(rhs)));
 
     // TODO: Need to implement
     template<typename T, typename Alloc, typename U = T>
-    constexpr list<T, Alloc>::size_type erase(
-        list<T, Alloc>& list, const U& value
+    constexpr btree<T, Alloc>::size_type erase(
+        btree<T, Alloc>& list, const U& value
     );
 
     // TODO: Need to implement
     template<typename T, typename Alloc, typename Pred>
-    constexpr list<T, Alloc>::size_type erase_if(
-        list<T, Alloc>& list,
+    constexpr btree<T, Alloc>::size_type erase_if(
+        btree<T, Alloc>& list,
         const Pred pred
     );
 } // namespace collections
