@@ -1,5 +1,5 @@
-#ifndef COLLECTIONS_LIST_HPP
-#define COLLECTIONS_LIST_HPP
+#ifndef COLLECTIONS_BTREE_HPP
+#define COLLECTIONS_BTREE_HPP
 
 // ISO C Includes
 #include <cstddef>
@@ -763,4 +763,4 @@ namespace collections {
     );
 } // namespace collections
 
-#endif // #ifndef COLLECTIONS_LIST_HPP
+#endif // #ifndef COLLECTIONS_BTREE_HPP
