@@ -344,7 +344,7 @@ namespace collections {
 
         private:
             // ── Friends ─────────────────────────────────────────────────────
-            friend class list;
+            friend class btree;
 
             // ── Fields ──────────────────────────────────────────────────────
             struct node* pos_;
