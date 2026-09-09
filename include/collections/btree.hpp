@@ -36,6 +36,8 @@ namespace collections {
 
         using difference_type = std::ptrdiff_t;
 
+        using compare = Compare;
+
         using ator_traits = std::allocator_traits<allocator_type>;
 
         using pointer = ator_traits::pointer;
@@ -322,11 +324,11 @@ namespace collections {
 
             using iterator_concept = std::bidirectional_iterator_tag;
 
-            using value_type = typename btree::value_type;
+            using value_type = btree::value_type;
 
-            using size_type = typename btree::size_type;
+            using size_type = btree::size_type;
 
-            using difference_type = typename btree::difference_type;
+            using difference_type = btree::difference_type;
             
             using reference = value_type&;
 
@@ -680,6 +682,22 @@ namespace collections {
         constexpr void merge(btree&& other, const Comp comp);
 
         // TODO: Need to implement
+        [[nodiscard]]
+        constexpr auto count(const_reference value) const -> size_type;
+
+        // TODO: Need to implement
+        constexpr auto equal_range(
+            const_reference value
+        ) -> std::pair<iterator, iterator>;
+
+
+        // TODO: Need to implement
+        [[nodiscard]]
+        constexpr auto equal_range(
+            const_reference value
+        ) const -> std::pair<const_iterator, const_iterator>;
+
+        // TODO: Need to implement
         constexpr auto lower_bound(const_reference value) -> iterator;
 
         // TODO: Need to implement
@@ -696,6 +714,10 @@ namespace collections {
         constexpr auto upper_bound(
             const_reference value
         ) const -> const_iterator;
+
+        // TODO: Need to implement
+        [[nodiscard]]
+        constexpr auto comp() const -> compare;
 
     };
 
