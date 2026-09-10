@@ -398,7 +398,7 @@ namespace collections {
             }
 
             // TODO: Need to implement
-            constexpr auto operator++() noexcept -> iterator&;
+            constexpr auto operator++() noexcept -> const_iterator&;
 
             // TODO: Need to test
             constexpr auto operator++(int) noexcept -> const_iterator& {
