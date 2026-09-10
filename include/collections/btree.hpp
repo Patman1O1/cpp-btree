@@ -509,7 +509,10 @@ namespace collections {
         constexpr auto operator=(const btree& rhs) -> btree&;
 
         // TODO: Need to implement
-        constexpr auto operator=(btree&& rhs) noexcept -> btree&;
+        constexpr auto operator=(btree&& rhs) noexcept(
+            std::allocator_traits<allocator_type>::is_always_equal::value &&
+            std::is_nothrow_move_assignable<compare>::value
+        ) -> btree&;
 
         // TODO: Need to implement
         [[nodiscard]]
