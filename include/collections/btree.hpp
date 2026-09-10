@@ -277,6 +277,10 @@ namespace collections {
                 iterator&&
             ) noexcept -> iterator& = default;
 
+            constexpr auto operator=(
+                std::initializer_list<value_type> values
+            ) -> reference;
+
             [[nodiscard]]
             constexpr auto operator==(const iterator&) const -> bool = default;
 
