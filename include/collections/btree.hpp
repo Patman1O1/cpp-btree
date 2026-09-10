@@ -693,6 +693,10 @@ namespace collections {
         constexpr auto count(const_reference value) const -> size_type;
 
         // TODO: Need to implement
+        [[nodiscard]]
+        constexpr auto contains(const_reference value) const -> bool;
+
+        // TODO: Need to implement
         constexpr auto equal_range(
             const_reference value
         ) -> std::pair<iterator, iterator>;
